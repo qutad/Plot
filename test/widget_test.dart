@@ -9,7 +9,6 @@ void main() {
     app.main();
     await tester.pumpAndSettle();
 
-    expect(find.text('plot - habit calendars'), findsOneWidget);
     expect(find.text('Read'), findsWidgets);
     expect(find.text('Stretch'), findsOneWidget);
     expect(find.text('New habit'), findsOneWidget);

@@ -210,21 +210,31 @@ class _HabitDetail extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 36),
-          const Row(
+          Row(
             children: [
               Expanded(
-                child: _StatCard(value: '0', label: 'CURRENT STREAK'),
+                child: _StatCard(
+                  value: habit.currentStreak.toString(),
+                  label: 'CURRENT STREAK',
+                ),
               ),
-              SizedBox(width: 16),
+              const SizedBox(width: 16),
               Expanded(
-                child: _StatCard(value: '0', label: 'LONGEST STREAK'),
+                child: _StatCard(
+                  value: habit.longestStreak.toString(),
+                  label: 'LONGEST STREAK',
+                ),
               ),
-              SizedBox(width: 16),
+              const SizedBox(width: 16),
               Expanded(
-                child: _StatCard(value: '0', label: 'DAYS PLANTED (52WK)'),
+                child: _StatCard(
+                  value: habit.daysPlantedLast52Weeks.toString(),
+                  label: 'DAYS PLANTED (52WK)',
+                ),
               ),
             ],
           ),
+
           const SizedBox(height: 30),
           ContributionCalendar(
             habit: habit,

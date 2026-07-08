@@ -134,6 +134,8 @@ class _MonthLabels extends StatelessWidget {
                 ContributionCalendar._cellSize + ContributionCalendar._cellGap,
             child: Text(
               _labelForWeek(week),
+              maxLines: 1,
+              softWrap: false,
               overflow: TextOverflow.visible,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontFamily: 'monospace',

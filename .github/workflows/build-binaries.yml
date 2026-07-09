@@ -108,8 +108,20 @@ jobs:
           Categories=Utility;
           EOF
 
-          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
-          cp linux/flutter/ephemeral/.plugin_symlinks/window_manager/example/linux/runner/resources/app_icon.png AppDir/usr/share/icons/hicolor/256x256/apps/plot.png || true
+          cat > AppDir/plot.svg <<'EOF'
+          <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+            <rect width="256" height="256" rx="48" fill="#0A100C"/>
+            <rect x="58" y="58" width="38" height="38" rx="8" fill="#E3B567"/>
+            <rect x="110" y="58" width="38" height="38" rx="8" fill="#2A382F"/>
+            <rect x="162" y="58" width="38" height="38" rx="8" fill="#2A382F"/>
+            <rect x="58" y="110" width="38" height="38" rx="8" fill="#69AC9A"/>
+            <rect x="110" y="110" width="38" height="38" rx="8" fill="#E3B567"/>
+            <rect x="162" y="110" width="38" height="38" rx="8" fill="#2A382F"/>
+            <rect x="58" y="162" width="38" height="38" rx="8" fill="#2A382F"/>
+            <rect x="110" y="162" width="38" height="38" rx="8" fill="#69AC9A"/>
+            <rect x="162" y="162" width="38" height="38" rx="8" fill="#E3B567"/>
+          </svg>
+          EOF
 
           cat > AppDir/AppRun <<'EOF'
           #!/bin/sh

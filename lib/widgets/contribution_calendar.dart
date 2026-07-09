@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:plot/core/theme/plot_theme.dart';
 import 'package:plot/features/habits/domain/habit.dart';
@@ -14,7 +16,7 @@ class ContributionCalendar extends StatelessWidget {
   static const _cellGap = 6.0;
 
   final Habit habit;
-  final ValueChanged<DateTime> onToggleDay;
+  final Future<void> Function(DateTime day) onToggleDay;
 
   @override
   Widget build(BuildContext context) {
@@ -169,7 +171,7 @@ class _CalendarCell extends StatelessWidget {
   final DateTime day;
   final Color color;
   final bool planted;
-  final ValueChanged<DateTime> onTap;
+  final Future<void> Function(DateTime day) onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -178,7 +180,7 @@ class _CalendarCell extends StatelessWidget {
       child: Tooltip(
         message: '${day.month}/${day.day}/${day.year}',
         child: InkWell(
-          onTap: () => onTap(day),
+          onTap: () => unawaited(onTap(day)),
           borderRadius: BorderRadius.circular(4),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 140),

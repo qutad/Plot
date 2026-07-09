@@ -11,21 +11,24 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final habitsState = ref.watch(habitsControllerProvider);
-    final selectedHabit = habitsState.selectedHabit;
 
     return Scaffold(
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: Row(
-                children: [
-                  _HabitSidebar(state: habitsState),
-                  Expanded(child: _HabitDetail(habit: selectedHabit)),
-                ],
-              ),
-            ),
-          ],
+        child: habitsState.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stackTrace) => Center(
+            child: Text('Failed to load habits: $error'),
+          ),
+          data: (state) {
+            final selectedHabit = state.selectedHabit;
+
+            return Row(
+              children: [
+                _HabitSidebar(state: state),
+                Expanded(child: _HabitDetail(habit: selectedHabit)),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -73,7 +76,7 @@ class _HabitSidebar extends ConsumerWidget {
           ],
           const SizedBox(height: 32),
           OutlinedButton.icon(
-            onPressed: () {},
+            onPressed: () => _showCreateHabitDialog(context, ref),
             icon: const Icon(Icons.add, size: 18),
             label: const Text('New habit'),
             style: OutlinedButton.styleFrom(
@@ -148,7 +151,7 @@ class _HabitListTile extends StatelessWidget {
                   ],
                 ),
               ),
-              _MiniCells(color: habit.color),
+              _MiniCells(habit: habit),
             ],
           ),
         ),
@@ -158,26 +161,37 @@ class _HabitListTile extends StatelessWidget {
 }
 
 class _MiniCells extends StatelessWidget {
-  const _MiniCells({required this.color});
+  const _MiniCells({required this.habit});
 
-  final Color color;
+  final Habit habit;
 
   @override
   Widget build(BuildContext context) {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final weekStart = today.subtract(Duration(days: today.weekday - 1));
+    final plantedDays = {
+      for (final day in habit.plantedDays) DateUtils.dateOnly(day),
+    };
+
     return Row(
       children: List.generate(
-        6,
-        (index) => Container(
-          width: 8,
-          height: 8,
-          margin: const EdgeInsets.only(left: 4),
-          decoration: BoxDecoration(
-            color: index == 0
-                ? color.withValues(alpha: 0.28)
-                : PlotTheme.border.withValues(alpha: 0.35),
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
+        DateTime.daysPerWeek,
+        (index) {
+          final day = weekStart.add(Duration(days: index));
+          final planted = plantedDays.contains(day);
+
+          return Container(
+            width: 8,
+            height: 8,
+            margin: const EdgeInsets.only(left: 4),
+            decoration: BoxDecoration(
+              color: planted
+                  ? habit.color
+                  : PlotTheme.border.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          );
+        },
       ),
     );
   }
@@ -206,7 +220,10 @@ class _HabitDetail extends ConsumerWidget {
                 onPressed: () => _showEditHabitDialog(context, ref, habit),
               ),
               const SizedBox(width: 12),
-              _IconBox(icon: Icons.close, onPressed: () {}),
+              _IconBox(
+                icon: Icons.close,
+                onPressed: () => _showDeleteHabitDialog(context, ref, habit),
+              ),
             ],
           ),
           const SizedBox(height: 36),
@@ -328,21 +345,87 @@ Future<void> _showEditHabitDialog(
 ) {
   return showDialog<void>(
     context: context,
-    builder: (context) => _EditHabitDialog(habit: habit, ref: ref),
+    builder: (context) => _HabitFormDialog(
+      title: 'Edit habit',
+      initialName: habit.name,
+      initialColor: habit.color,
+      onSave: (name, color) {
+        return ref
+            .read(habitsControllerProvider.notifier)
+            .updateSelectedHabit(name: name, color: color);
+      },
+    ),
   );
 }
 
-class _EditHabitDialog extends StatefulWidget {
-  const _EditHabitDialog({required this.habit, required this.ref});
-
-  final Habit habit;
-  final WidgetRef ref;
-
-  @override
-  State<_EditHabitDialog> createState() => _EditHabitDialogState();
+Future<void> _showDeleteHabitDialog(
+  BuildContext context,
+  WidgetRef ref,
+  Habit habit,
+) {
+  return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete habit?'),
+        content: Text('This will permanently delete ${habit.name}.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              await ref
+                  .read(habitsControllerProvider.notifier)
+                  .deleteSelectedHabit();
+  
+              if (!context.mounted) {
+                return;
+              }
+  
+              Navigator.of(context).pop();
+            },
+            child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
 }
 
-class _EditHabitDialogState extends State<_EditHabitDialog> {
+Future<void> _showCreateHabitDialog(BuildContext context, WidgetRef ref) {
+  return showDialog<void>(
+    context: context,
+    builder: (context) => _HabitFormDialog(
+      title: 'New habit',
+      initialName: '',
+      initialColor: const Color(0xFFE3B567),
+      onSave: (name, color) {
+        return ref
+            .read(habitsControllerProvider.notifier)
+            .addHabit(name: name, color: color);
+      },
+    ),
+  );
+}
+
+class _HabitFormDialog extends StatefulWidget {
+  const _HabitFormDialog({
+    required this.title,
+    required this.initialName,
+    required this.initialColor,
+    required this.onSave,
+  });
+
+  final String title;
+  final String initialName;
+  final Color initialColor;
+  final Future<void> Function(String name, Color color) onSave;
+
+  @override
+  State<_HabitFormDialog> createState() => _HabitFormDialogState();
+}
+
+class _HabitFormDialogState extends State<_HabitFormDialog> {
   static const colors = [
     Color(0xFFE3B567),
     Color(0xFFD88360),
@@ -358,8 +441,8 @@ class _EditHabitDialogState extends State<_EditHabitDialog> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.habit.name);
-    _selectedColor = widget.habit.color;
+    _nameController = TextEditingController(text: widget.initialName);
+    _selectedColor = widget.initialColor;
   }
 
   @override
@@ -385,7 +468,7 @@ class _EditHabitDialogState extends State<_EditHabitDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Edit habit',
+                widget.title,
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
               const SizedBox(height: 26),
@@ -438,13 +521,19 @@ class _EditHabitDialogState extends State<_EditHabitDialog> {
                   ),
                   const SizedBox(width: 12),
                   FilledButton(
-                    onPressed: () {
-                      widget.ref
-                          .read(habitsControllerProvider.notifier)
-                          .updateSelectedHabit(
-                            name: _nameController.text.trim(),
-                            color: _selectedColor,
-                          );
+                    onPressed: () async {
+                      final name = _nameController.text.trim();
+
+                      if (name.isEmpty) {
+                        return;
+                      }
+
+                      await widget.onSave(name, _selectedColor);
+
+                      if (!context.mounted) {
+                        return;
+                      }
+
                       Navigator.of(context).pop();
                     },
                     child: const Text('Save'),

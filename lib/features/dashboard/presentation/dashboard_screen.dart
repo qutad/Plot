@@ -364,28 +364,28 @@ Future<void> _showDeleteHabitDialog(
   Habit habit,
 ) {
   return showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete habit?'),
-        content: Text('This will permanently delete ${habit.name}.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              await ref
-                  .read(habitsControllerProvider.notifier)
-                  .deleteSelectedHabit();
-  
-              if (!context.mounted) {
-                return;
-              }
-  
-              Navigator.of(context).pop();
-            },
-            child: const Text('Delete'),
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Delete habit?'),
+      content: Text('This will permanently delete ${habit.name}.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () async {
+            await ref
+                .read(habitsControllerProvider.notifier)
+                .deleteSelectedHabit();
+
+            if (!context.mounted) {
+              return;
+            }
+
+            Navigator.of(context).pop();
+          },
+          child: const Text('Delete'),
         ),
       ],
     ),

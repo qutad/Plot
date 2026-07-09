@@ -150,10 +150,10 @@ class HabitsController extends AsyncNotifier<HabitsState> {
         HabitsState(
           habits: starterHabits,
           selectedHabitId: starterHabits.first.id,
-          ),
-        );
-        return;
-      }
+        ),
+      );
+      return;
+    }
 
     state = AsyncData(
       HabitsState(
@@ -162,8 +162,6 @@ class HabitsController extends AsyncNotifier<HabitsState> {
       ),
     );
   }
-
-    
 
   List<Habit> _starterHabits() {
     final today = DateUtils.dateOnly(DateTime.now());

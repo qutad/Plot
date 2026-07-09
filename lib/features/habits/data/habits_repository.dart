@@ -65,13 +65,13 @@ class HabitsRepository {
   }
 
   Future<void> deleteHabit(String habitId) async {
-    await (_database.delete(_database.habitEntries,)
-      ..where((row) => row.habitId.equals(habitId)))
-      .go();
+    await (_database.delete(
+      _database.habitEntries,
+    )..where((row) => row.habitId.equals(habitId))).go();
 
-    await (_database.delete(_database.habits,)
-      ..where((row) => row.id.equals(habitId)))
-      .go();
+    await (_database.delete(
+      _database.habits,
+    )..where((row) => row.id.equals(habitId))).go();
   }
 
   Future<void> toggleHabitEntry({

@@ -99,8 +99,7 @@ jobs:
           mkdir -p AppDir/usr/bin
           cp -r build/linux/x64/release/bundle/* AppDir/usr/bin/
 
-          mkdir -p AppDir/usr/share/applications
-          cat > AppDir/usr/share/applications/plot.desktop <<'EOF'
+          cat > AppDir/plot.desktop <<'EOF'
           [Desktop Entry]
           Type=Application
           Name=Plot

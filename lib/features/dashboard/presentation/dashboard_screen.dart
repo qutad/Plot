@@ -43,11 +43,11 @@ class _HabitSidebar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
-      width: 340,
+      width: 280,
       decoration: const BoxDecoration(
         border: Border(right: BorderSide(color: PlotTheme.border)),
       ),
-      padding: const EdgeInsets.fromLTRB(24, 28, 18, 28),
+      padding: const EdgeInsets.fromLTRB(20, 22, 16, 22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -130,7 +130,7 @@ class _HabitListTile extends StatelessWidget {
             ),
             borderRadius: BorderRadius.circular(12),
           ),
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           child: Row(
             children: [
               _ColorChip(color: habit.color, size: 12),
@@ -205,7 +205,7 @@ class _HabitDetail extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(44, 42, 44, 44),
+      padding: const EdgeInsets.fromLTRB(32, 30, 32, 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -252,7 +252,7 @@ class _HabitDetail extends ConsumerWidget {
             ],
           ),
 
-          const SizedBox(height: 30),
+          const SizedBox(height: 24),
           ContributionCalendar(
             habit: habit,
             onToggleDay: ref
@@ -294,8 +294,8 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 92,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      height: 76,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       decoration: BoxDecoration(
         color: PlotTheme.surface,
         border: Border.all(color: PlotTheme.border),

@@ -30,28 +30,28 @@ class PlotTheme {
       textTheme: const TextTheme(
         displaySmall: TextStyle(
           color: text,
-          fontSize: 42,
+          fontSize: 34,
           fontWeight: FontWeight.w800,
-          letterSpacing: -1.2,
+          letterSpacing: -1,
         ),
         headlineMedium: TextStyle(
           color: text,
-          fontSize: 30,
+          fontSize: 24,
           fontWeight: FontWeight.w800,
-          letterSpacing: -0.8,
+          letterSpacing: -0.6,
         ),
         titleLarge: TextStyle(
           color: text,
-          fontSize: 22,
+          fontSize: 18,
           fontWeight: FontWeight.w700,
         ),
-        bodyLarge: TextStyle(color: text, fontSize: 16),
-        bodyMedium: TextStyle(color: muted, fontSize: 14),
+        bodyLarge: TextStyle(color: text, fontSize: 14),
+        bodyMedium: TextStyle(color: muted, fontSize: 12),
         labelLarge: TextStyle(
           color: text,
-          fontSize: 14,
+          fontSize: 12,
           fontWeight: FontWeight.w700,
-          letterSpacing: 1.6,
+          letterSpacing: 1.4,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(

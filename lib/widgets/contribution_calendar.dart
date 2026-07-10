@@ -12,8 +12,8 @@ class ContributionCalendar extends StatelessWidget {
   });
 
   static const _weeks = 52;
-  static const _cellSize = 16.0;
-  static const _cellGap = 6.0;
+  static const _cellSize = 12.0;
+  static const _cellGap = 4.0;
 
   final Habit habit;
   final Future<void> Function(DateTime day) onToggleDay;
@@ -24,67 +24,78 @@ class ContributionCalendar extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(30),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: PlotTheme.surface,
         border: Border.all(color: PlotTheme.border),
         borderRadius: BorderRadius.circular(14),
       ),
       child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _MonthLabels(days: days),
-            const SizedBox(height: 10),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (var week = 0; week < _weeks; week++) ...[
-                  Column(
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _MonthLabels(days: days),
+                  const SizedBox(height: 10),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      for (
-                        var weekday = 0;
-                        weekday < DateTime.daysPerWeek;
-                        weekday++
-                      )
-                        _CalendarCell(
-                          day: days[(week * DateTime.daysPerWeek) + weekday],
-                          color: habit.color,
-                          planted: habit.plantedDays.contains(
-                            days[(week * DateTime.daysPerWeek) + weekday],
-                          ),
-                          onTap: onToggleDay,
+                      for (var week = 0; week < _weeks; week++) ...[
+                        Column(
+                          children: [
+                            for (
+                              var weekday = 0;
+                              weekday < DateTime.daysPerWeek;
+                              weekday++
+                            )
+                              _CalendarCell(
+                                day:
+                                    days[(week * DateTime.daysPerWeek) +
+                                        weekday],
+                                color: habit.color,
+                                planted: habit.plantedDays.contains(
+                                  days[(week * DateTime.daysPerWeek) + weekday],
+                                ),
+                                onTap: onToggleDay,
+                              ),
+                          ],
                         ),
+                        const SizedBox(width: _cellGap),
+                      ],
                     ],
                   ),
-                  const SizedBox(width: _cellGap),
                 ],
-              ],
+              ),
             ),
             const SizedBox(height: 26),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                const SizedBox(width: 1030),
-                Text(
-                  'Less',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontFamily: 'monospace',
+            Align(
+              alignment: Alignment.centerRight,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Less',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontFamily: 'monospace',
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                for (final opacity in const [0.08, 0.25, 0.45, 0.7, 1.0]) ...[
-                  _LegendCell(color: habit.color.withValues(alpha: opacity)),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
+                  for (final opacity in const [0.08, 0.25, 0.45, 0.7, 1.0]) ...[
+                    _LegendCell(color: habit.color.withValues(alpha: opacity)),
+                    const SizedBox(width: 6),
+                  ],
+                  Text(
+                    'More',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontFamily: 'monospace',
+                    ),
+                  ),
                 ],
-                Text(
-                  'More',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontFamily: 'monospace',
-                  ),
-                ),
-              ],
+              ),
             ),
           ],
         ),

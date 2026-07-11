@@ -69,3 +69,4 @@ habits stores habit metadata such as name, color, and creation time.
 habit_entries stores planted calendar days for each habit.
 
 ## License
+GPL-3.0 license

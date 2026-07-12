@@ -187,6 +187,7 @@ class _CalendarCell extends StatefulWidget {
   @override
   State<_CalendarCell> createState() => _CalendarCellState();
 }
+
 class _CalendarCellState extends State<_CalendarCell> {
   bool _hovered = false;
 
@@ -246,8 +247,8 @@ class _CalendarCellState extends State<_CalendarCell> {
                 color: planted ? color : const Color(0xFF1B271F),
                 border: Border.all(
                   color: PlotTheme.border.withValues(alpha: 0.65),
-              ),
-              borderRadius: BorderRadius.circular(4),
+                ),
+                borderRadius: BorderRadius.circular(4),
               ),
             ),
           ),

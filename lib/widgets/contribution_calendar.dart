@@ -185,31 +185,77 @@ class _CalendarCell extends StatelessWidget {
   final Future<void> Function(DateTime day) onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: ContributionCalendar._cellGap),
-      child: Tooltip(
-        message: '${day.month}/${day.day}/${day.year}',
-        child: InkWell(
-          onTap: () => unawaited(onTap(day)),
-          borderRadius: BorderRadius.circular(4),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 140),
-            width: ContributionCalendar._cellSize,
-            height: ContributionCalendar._cellSize,
-            decoration: BoxDecoration(
-              color: planted ? color : const Color(0xFF1B271F),
-              border: Border.all(
-                color: PlotTheme.border.withValues(alpha: 0.65),
-              ),
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
+   Widget build(BuildContext context) {
+     return Padding(
+       padding: const EdgeInsets.only(bottom: ContributionCalendar._cellGap),
+       child: Tooltip(
+         richMessage: TextSpan(
+           style: const TextStyle(
+             color: PlotTheme.text,
+             fontFamily: 'monospace',
+             fontSize: 12,
+             fontWeight: FontWeight.w700,
+           ),
+           children: [
+             TextSpan(text: _formattedDate(day)),
+             TextSpan(
+               text: ' - ${planted ? 'planted' : 'not planted'}',
+               style: const TextStyle(
+                 color: PlotTheme.muted,
+                 fontWeight: FontWeight.w400,
+               ),
+             ),
+           ],
+         ),
+         decoration: BoxDecoration(
+           color: PlotTheme.surfaceRaised,
+           border: Border.all(color: PlotTheme.border),
+           borderRadius: BorderRadius.circular(8),
+         ),
+         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+         margin: const EdgeInsets.all(8),
+         verticalOffset: 14,
+         child: InkWell(
+           onTap: () => unawaited(onTap(day)),
+           borderRadius: BorderRadius.circular(4),
+           child: AnimatedContainer(
+             duration: const Duration(milliseconds: 140),
+             width: ContributionCalendar._cellSize,
+             height: ContributionCalendar._cellSize,
+             decoration: BoxDecoration(
+               color: planted ? color : const Color(0xFF1B271F),
+               border: Border.all(
+                 color: PlotTheme.border.withValues(alpha: 0.65),
+               ),
+               borderRadius: BorderRadius.circular(4),
+             ),
+           ),
+         ),
+       ),
+     );
+   }
+
+   String _formattedDate(DateTime date) {
+       const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+       const months = [
+         'Jan',
+         'Feb',
+         'Mar',
+         'Apr',
+         'May',
+         'Jun',
+         'Jul',
+         'Aug',
+         'Sep',
+         'Oct',
+         'Nov',
+         'Dec',
+       ];
+       
+       return '${weekdays[date.weekday - 1]}, '
+           '${months[date.month - 1]} ${date.day}, ${date.year}';
+     }
+   }
 
 class _LegendCell extends StatelessWidget {
   const _LegendCell({required this.color});

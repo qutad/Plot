@@ -2,7 +2,7 @@
 
 Plot is a desktop-style habit tracker built around GitHub contribution-calendar cells.
 
-The app is designed for tracking habits visually, one day at a time. Each habit has its own contribution-style calendar, streak stats, weekly mini activity cells, and local SQLite persistence.
+The app is designed for tracking habits visually, one day at a time. Each habit has its own contribution-style calendar, and streak stats, weekly mini activity cells.
 
 ## Features
 

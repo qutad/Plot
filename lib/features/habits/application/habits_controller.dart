@@ -12,10 +12,15 @@ class HabitsState {
   const HabitsState({required this.habits, required this.selectedHabitId});
 
   final List<Habit> habits;
-  final String selectedHabitId;
+  final String? selectedHabitId;
 
-  Habit get selectedHabit {
-    return habits.firstWhere((habit) => habit.id == selectedHabitId);
+  Habit? get selectedHabit {
+    for (final habit in habits) {
+      if (habit.id == selectedHabitId) {
+        return habit;
+      }
+    }
+    return null;
   }
 }
 
@@ -24,9 +29,24 @@ class HabitsController extends AsyncNotifier<HabitsState> {
   Future<HabitsState> build() async {
     final repository = ref.watch(habitsRepositoryProvider);
     final habits = await repository.loadHabits();
+    final initialized = await repository.areStarterHabitsInitialized();
 
     if (habits.isNotEmpty) {
-      return HabitsState(habits: habits, selectedHabitId: habits.first.id);
+      if (!initialized) {
+        await repository.markStarterHabitsInitialized();
+      }
+
+      return HabitsState(
+        habits: habits,
+        selectedHabitId: habits.first.id,
+      );
+    }
+
+    if (initialized) {
+      return const HabitsState(
+        habits: [],
+        selectedHabitId: null,
+      );
     }
 
     final starterHabits = _starterHabits();
@@ -38,6 +58,8 @@ class HabitsController extends AsyncNotifier<HabitsState> {
         await repository.toggleHabitEntry(habitId: habit.id, day: day);
       }
     }
+
+    await repository.markStarterHabitsInitialized();
 
     return HabitsState(
       habits: starterHabits,
@@ -55,6 +77,12 @@ class HabitsController extends AsyncNotifier<HabitsState> {
     required Color color,
   }) async {
     final current = state.requireValue;
+    final selectedHabitId = current.selectedHabitId;
+
+    if (selectedHabitId == null) {
+      return;
+    }
+
     final repository = ref.read(habitsRepositoryProvider);
     final habits = [
       for (final habit in current.habits)
@@ -63,6 +91,7 @@ class HabitsController extends AsyncNotifier<HabitsState> {
         else
           habit,
     ];
+
     final updatedHabit = habits.firstWhere(
       (habit) => habit.id == current.selectedHabitId,
     );
@@ -70,7 +99,7 @@ class HabitsController extends AsyncNotifier<HabitsState> {
     await repository.updateHabit(updatedHabit);
 
     state = AsyncData(
-      HabitsState(habits: habits, selectedHabitId: current.selectedHabitId),
+      HabitsState(habits: habits, selectedHabitId: selectedHabitId),
     );
   }
 
@@ -98,11 +127,17 @@ class HabitsController extends AsyncNotifier<HabitsState> {
 
   Future<void> togglePlantedDay(DateTime day) async {
     final current = state.requireValue;
+    final selectedHabitId = current.selectedHabitId;
+
+    if (selectedHabitId == null) {
+      return;
+    }
+
     final repository = ref.read(habitsRepositoryProvider);
     final date = DateUtils.dateOnly(day);
 
     await repository.toggleHabitEntry(
-      habitId: current.selectedHabitId,
+      habitId: selectedHabitId,
       day: date,
     );
 
@@ -119,14 +154,19 @@ class HabitsController extends AsyncNotifier<HabitsState> {
     ];
 
     state = AsyncData(
-      HabitsState(habits: habits, selectedHabitId: current.selectedHabitId),
+      HabitsState(habits: habits, selectedHabitId: selectedHabitId),
     );
   }
 
   Future<void> deleteSelectedHabit() async {
     final current = state.requireValue;
-    final repository = ref.read(habitsRepositoryProvider);
     final habitId = current.selectedHabitId;
+
+    if (habitId == null) {
+      return;
+    }
+
+    final repository = ref.read(habitsRepositoryProvider);
 
     await repository.deleteHabit(habitId);
 
@@ -136,20 +176,10 @@ class HabitsController extends AsyncNotifier<HabitsState> {
     ];
 
     if (habits.isEmpty) {
-      final starterHabits = _starterHabits();
-
-      for (final habit in starterHabits) {
-        await repository.insertHabit(habit);
-
-        for (final day in habit.plantedDays) {
-          await repository.toggleHabitEntry(habitId: habit.id, day: day);
-        }
-      }
-
-      state = AsyncData(
+      state = const AsyncData(
         HabitsState(
-          habits: starterHabits,
-          selectedHabitId: starterHabits.first.id,
+          habits: [],
+          selectedHabitId: null,
         ),
       );
       return;

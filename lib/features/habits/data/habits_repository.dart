@@ -16,8 +16,29 @@ final habitsRepositoryProvider = Provider<HabitsRepository>((ref) {
 
 class HabitsRepository {
   const HabitsRepository(this._database);
+  static const _starterHabitsInitializedkey = 'starterHabitsInitialized';
 
   final db.AppDatabase _database;
+
+  Future<bool> areStarterHabitsInitialized() async {
+    final setting =
+        await (_database.select(_database.appSettings)..where(
+              (row) => row.key.equals(_starterHabitsInitializedkey),
+            ))
+            .getSingleOrNull();
+    return setting?.value == 'true';
+  }
+
+  Future<void> markStarterHabitsInitialized() {
+    return _database
+        .into(_database.appSettings)
+        .insertOnConflictUpdate(
+          db.AppSettingsCompanion.insert(
+            key: _starterHabitsInitializedkey,
+            value: 'true',
+          ),
+        );
+  }
 
   Future<List<domain.Habit>> loadHabits() async {
     final habitRows = await _database.select(_database.habits).get();

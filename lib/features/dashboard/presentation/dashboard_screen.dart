@@ -25,7 +25,11 @@ class DashboardScreen extends ConsumerWidget {
             return Row(
               children: [
                 _HabitSidebar(state: state),
-                Expanded(child: _HabitDetail(habit: selectedHabit)),
+                Expanded(
+                  child: selectedHabit == null
+                      ? const SizedBox.shrink()
+                      : _HabitDetail(habit: selectedHabit),
+                ),
               ],
             );
           },

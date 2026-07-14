@@ -26,14 +26,39 @@ class HabitEntries extends Table {
   Set<Column<Object>> get primaryKey => {habitId, plantedOn};
 }
 
-@DriftDatabase(tables: [Habits, HabitEntries])
+class AppSettings extends Table {
+  TextColumn get key => text()();
+  TextColumn get value => text()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {key};
+}
+
+@DriftDatabase(tables: [Habits, HabitEntries, AppSettings])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (migrator) => migrator.createAll(),
+    onUpgrade: (migrator, from, to) async {
+      if (from < 2) {
+        await migrator.createTable(appSettings);
+
+        await into(appSettings).insert(
+          AppSettingsCompanion.insert(
+            key: 'starterHabitsInitialized',
+            value: 'true',
+          ),
+        );
+      }
+    },
+  );
 }
 
 LazyDatabase _openConnection() {

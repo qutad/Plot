@@ -20,32 +20,433 @@ class DashboardScreen extends ConsumerWidget {
             child: Text('Failed to load habits: $error'),
           ),
           data: (state) {
-            final selectedHabit = state.selectedHabit;
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth < 1024) {
+                  return _MobileDashboard(state: state);
+                }
 
-            return Row(
-              children: [
-                _HabitSidebar(state: state),
-                Expanded(
-                  child: selectedHabit == null
-                      ? Center(
-                          child: Text(
-                            'No habits',
-                            style: Theme.of(context).textTheme.headlineMedium
-                                ?.copyWith(
-                                  color: PlotTheme.muted,
-                                  fontFamily: 'monospace',
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  fontStyle: FontStyle.italic,
-                                  letterSpacing: 1.2,
-                                ),
-                          ),
-                        )
-                      : _HabitDetail(habit: selectedHabit),
-                ),
-              ],
+                return _DesktopDashboard(state: state);
+              },
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+class _DesktopDashboard extends StatelessWidget {
+  const _DesktopDashboard({required this.state});
+
+  final HabitsState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedHabit = state.selectedHabit;
+
+    return Row(
+      key: const Key('desktop-dashboard'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _HabitSidebar(state: state),
+        Expanded(
+          child: selectedHabit == null
+              ? Center(
+                  child: Text(
+                    'No habits',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: PlotTheme.muted,
+                      fontFamily: PlotTheme.monoFont,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      fontStyle: FontStyle.italic,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                )
+              : _HabitDetail(habit: selectedHabit),
+        ),
+      ],
+    );
+  }
+}
+
+class _MobileDashboard extends ConsumerWidget {
+  const _MobileDashboard({required this.state});
+
+  final HabitsState state;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedHabit = state.selectedHabit;
+    final width = MediaQuery.sizeOf(context).width;
+    final horizontalPadding = width < 380 ? 16.0 : 20.0;
+
+    return SingleChildScrollView(
+      key: const Key('mobile-dashboard'),
+      padding: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        18,
+        horizontalPadding,
+        120,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _MobileHeader(
+            onAdd: () => _showCreateHabitForm(context, ref, compact: true),
+          ),
+          const SizedBox(height: 26),
+          if (state.habits.isNotEmpty)
+            SizedBox(
+              height: 44,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: state.habits.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final habit = state.habits[index];
+
+                  return _MobileHabitChip(
+                    habit: habit,
+                    selected: habit.id == state.selectedHabitId,
+                    onTap: () {
+                      ref
+                          .read(habitsControllerProvider.notifier)
+                          .selectHabit(habit.id);
+                    },
+                  );
+                },
+              ),
+            ),
+          const SizedBox(height: 24),
+          if (selectedHabit == null)
+            const _MobileEmptyState()
+          else
+            _MobileSelectedHabit(habit: selectedHabit),
+        ],
+      ),
+    );
+  }
+}
+
+class _MobileHeader extends StatelessWidget {
+  const _MobileHeader({required this.onAdd});
+
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        RichText(
+          text: TextSpan(
+            text: 'Plot',
+            style: Theme.of(context).textTheme.displaySmall?.copyWith(
+              fontSize: 30,
+            ),
+            children: const [
+              TextSpan(
+                text: '.',
+                style: TextStyle(color: PlotTheme.gold),
+              ),
+            ],
+          ),
+        ),
+        const Spacer(),
+        IconButton(
+          onPressed: onAdd,
+          tooltip: 'Add habit',
+          style: IconButton.styleFrom(
+            foregroundColor: PlotTheme.ink,
+            backgroundColor: PlotTheme.gold,
+            fixedSize: const Size.square(44),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          icon: const Icon(Icons.add, size: 24),
+        ),
+      ],
+    );
+  }
+}
+
+class _MobileHabitChip extends StatelessWidget {
+  const _MobileHabitChip({
+    required this.habit,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final Habit habit;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: habit.name,
+      child: Material(
+        color: selected ? PlotTheme.surfaceRaised : Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+          side: BorderSide(
+            color: selected
+                ? PlotTheme.border
+                : PlotTheme.border.withValues(alpha: 0.6),
+          ),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(22),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _ColorChip(color: habit.color, size: 9),
+                const SizedBox(width: 9),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 160),
+                  child: Text(
+                    habit.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: selected ? PlotTheme.text : PlotTheme.muted,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+enum _HabitAction {
+  edit,
+  delete,
+}
+
+class _MobileSelectedHabit extends ConsumerWidget {
+  const _MobileSelectedHabit({required this.habit});
+
+  final Habit habit;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            _ColorChip(color: habit.color, size: 14),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                habit.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+            ),
+            const SizedBox(width: 8),
+            PopupMenuButton<_HabitAction>(
+              key: const Key('mobile-habit-actions'),
+              tooltip: 'Habit actions',
+              color: PlotTheme.surfaceRaised,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: const BorderSide(color: PlotTheme.border),
+              ),
+              icon: const Icon(
+                Icons.more_horiz,
+                color: PlotTheme.muted,
+              ),
+              onSelected: (action) async {
+                switch (action) {
+                  case _HabitAction.edit:
+                    await _showEditHabitForm(
+                      context,
+                      ref,
+                      habit,
+                      compact: true,
+                    );
+                  case _HabitAction.delete:
+                    await _showDeleteHabitDialog(context, ref, habit);
+                }
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: _HabitAction.edit,
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit_outlined, size: 18),
+                      SizedBox(width: 12),
+                      Text('Edit habit'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: _HabitAction.delete,
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline, size: 18),
+                      SizedBox(width: 12),
+                      Text('Delete habit'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        _MobileStatistics(habit: habit),
+        const SizedBox(height: 22),
+        ContributionCalendar(
+          habit: habit,
+          compact: true,
+          onToggleDay: ref
+              .read(habitsControllerProvider.notifier)
+              .togglePlantedDay,
+        ),
+        const SizedBox(height: 20),
+        Center(
+          child: Text(
+            'Tap a day to plant it. Tap again to clear it.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: PlotTheme.muted,
+              fontFamily: PlotTheme.monoFont,
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MobileStatistics extends StatelessWidget {
+  const _MobileStatistics({required this.habit});
+
+  final Habit habit;
+
+  @override
+  Widget build(BuildContext context) {
+    final cards = [
+      _MobileStatCard(
+        value: habit.currentStreak.toString(),
+        label: 'CURRENT\nSTREAK',
+      ),
+      _MobileStatCard(
+        value: habit.longestStreak.toString(),
+        label: 'LONGEST\nSTREAK',
+      ),
+      _MobileStatCard(
+        value: habit.daysPlantedLast52Weeks.toString(),
+        label: 'DAYS\nPLANTED',
+      ),
+    ];
+    final stackCards = MediaQuery.textScalerOf(context).scale(1) > 1.3;
+
+    return SizedBox(
+      key: const Key('mobile-statistics'),
+      child: stackCards
+          ? Column(
+              children: [
+                for (var index = 0; index < cards.length; index++) ...[
+                  SizedBox(width: double.infinity, child: cards[index]),
+                  if (index != cards.length - 1) const SizedBox(height: 8),
+                ],
+              ],
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var index = 0; index < cards.length; index++) ...[
+                  Expanded(child: cards[index]),
+                  if (index != cards.length - 1) const SizedBox(width: 8),
+                ],
+              ],
+            ),
+    );
+  }
+}
+
+class _MobileStatCard extends StatelessWidget {
+  const _MobileStatCard({
+    required this.value,
+    required this.label,
+  });
+
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 94),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 13,
+      ),
+      decoration: BoxDecoration(
+        color: PlotTheme.surface,
+        border: Border.all(color: PlotTheme.border),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              fontFamily: PlotTheme.monoFont,
+              fontSize: 22,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            label,
+            maxLines: 2,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: PlotTheme.muted,
+              fontFamily: PlotTheme.monoFont,
+              fontSize: 9,
+              height: 1.25,
+              letterSpacing: 0.7,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MobileEmptyState extends StatelessWidget {
+  const _MobileEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 72),
+      child: Center(
+        child: Text(
+          'Add your first habit',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: PlotTheme.muted,
+            fontFamily: PlotTheme.monoFont,
+          ),
         ),
       ),
     );
@@ -81,19 +482,29 @@ class _HabitSidebar extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 30),
-          for (final habit in state.habits) ...[
-            _HabitListTile(
-              habit: habit,
-              selected: habit.id == state.selectedHabitId,
-              onTap: () => ref
-                  .read(habitsControllerProvider.notifier)
-                  .selectHabit(habit.id),
+          Expanded(
+            child: ListView.separated(
+              itemCount: state.habits.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final habit = state.habits[index];
+                return _HabitListTile(
+                  habit: habit,
+                  selected: habit.id == state.selectedHabitId,
+                  onTap: () => ref
+                      .read(habitsControllerProvider.notifier)
+                      .selectHabit(habit.id),
+                );
+              },
             ),
-            const SizedBox(height: 12),
-          ],
-          const SizedBox(height: 32),
+          ),
+          const SizedBox(height: 20),
           OutlinedButton.icon(
-            onPressed: () => _showCreateHabitDialog(context, ref),
+            onPressed: () => _showCreateHabitForm(
+              context,
+              ref,
+              compact: false,
+            ),
             icon: const Icon(Icons.add, size: 18),
             label: const Text('New habit'),
             style: OutlinedButton.styleFrom(
@@ -105,13 +516,13 @@ class _HabitSidebar extends ConsumerWidget {
               ),
             ),
           ),
-          const Spacer(),
+          const SizedBox(height: 20),
           const Divider(color: PlotTheme.border),
           const SizedBox(height: 12),
           Text(
             'Click a day to plant it. Click again to clear it.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontFamily: 'monospace',
+              fontFamily: PlotTheme.monoFont,
               height: 1.35,
             ),
           ),
@@ -184,17 +595,17 @@ class _MiniCells extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final today = DateUtils.dateOnly(DateTime.now());
-    final weekStart = today.subtract(Duration(days: today.weekday - 1));
+    final today = Habit.civilDate(DateTime.now());
+    final weekStart = Habit.addCivilDays(today, -(today.weekday - 1));
     final plantedDays = {
-      for (final day in habit.plantedDays) DateUtils.dateOnly(day),
+      for (final day in habit.plantedDays) Habit.civilDate(day),
     };
 
     return Row(
       children: List.generate(
         DateTime.daysPerWeek,
         (index) {
-          final day = weekStart.add(Duration(days: index));
+          final day = Habit.addCivilDays(weekStart, index);
           final planted = plantedDays.contains(day);
 
           return Container(
@@ -221,69 +632,85 @@ class _HabitDetail extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(32, 30, 32, 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              _ColorChip(color: habit.color, size: 18),
-              const SizedBox(width: 16),
-              Text(habit.name, style: Theme.of(context).textTheme.displaySmall),
-              const Spacer(),
-              _IconBox(
-                icon: Icons.edit_outlined,
-                onPressed: () => _showEditHabitDialog(context, ref, habit),
-              ),
-              const SizedBox(width: 12),
-              _IconBox(
-                icon: Icons.close,
-                onPressed: () => _showDeleteHabitDialog(context, ref, habit),
-              ),
-            ],
-          ),
-          const SizedBox(height: 36),
-          Row(
-            children: [
-              Expanded(
-                child: _StatCard(
-                  value: habit.currentStreak.toString(),
-                  label: 'CURRENT STREAK',
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(32, 30, 32, 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _ColorChip(color: habit.color, size: 18),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    habit.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.displaySmall,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _StatCard(
-                  value: habit.longestStreak.toString(),
-                  label: 'LONGEST STREAK',
+                const SizedBox(width: 16),
+                _IconBox(
+                  icon: Icons.edit_outlined,
+                  onPressed: () => _showEditHabitForm(
+                    context,
+                    ref,
+                    habit,
+                    compact: false,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _StatCard(
-                  value: habit.daysPlantedLast52Weeks.toString(),
-                  label: 'DAYS PLANTED (52WK)',
+                const SizedBox(width: 12),
+                _IconBox(
+                  icon: Icons.close,
+                  onPressed: () => _showDeleteHabitDialog(context, ref, habit),
                 ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 24),
-          ContributionCalendar(
-            habit: habit,
-            onToggleDay: ref
-                .read(habitsControllerProvider.notifier)
-                .togglePlantedDay,
-          ),
-        ],
+              ],
+            ),
+            const SizedBox(height: 36),
+            Row(
+              children: [
+                Expanded(
+                  child: _StatCard(
+                    value: habit.currentStreak.toString(),
+                    label: 'CURRENT STREAK',
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _StatCard(
+                    value: habit.longestStreak.toString(),
+                    label: 'LONGEST STREAK',
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _StatCard(
+                    value: habit.daysPlantedLast52Weeks.toString(),
+                    label: 'DAYS PLANTED (52WK)',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            ContributionCalendar(
+              habit: habit,
+              onToggleDay: ref
+                  .read(habitsControllerProvider.notifier)
+                  .togglePlantedDay,
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
 class _IconBox extends StatelessWidget {
-  const _IconBox({required this.icon, required this.onPressed});
+  const _IconBox({
+    required this.icon,
+    required this.onPressed,
+  });
 
   final IconData icon;
   final VoidCallback onPressed;
@@ -296,14 +723,19 @@ class _IconBox extends StatelessWidget {
       style: IconButton.styleFrom(
         fixedSize: const Size.square(42),
         side: const BorderSide(color: PlotTheme.border),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
       ),
     );
   }
 }
 
 class _StatCard extends StatelessWidget {
-  const _StatCard({required this.value, required this.label});
+  const _StatCard({
+    required this.value,
+    required this.label,
+  });
 
   final String value;
   final String label;
@@ -322,12 +754,15 @@ class _StatCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(value, style: Theme.of(context).textTheme.headlineMedium),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
           Text(
             label,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
               color: PlotTheme.muted,
-              fontFamily: 'monospace',
+              fontFamily: PlotTheme.monoFont,
               fontSize: 13,
             ),
           ),
@@ -338,7 +773,10 @@ class _StatCard extends StatelessWidget {
 }
 
 class _ColorChip extends StatelessWidget {
-  const _ColorChip({required this.color, required this.size});
+  const _ColorChip({
+    required this.color,
+    required this.size,
+  });
 
   final Color color;
   final double size;
@@ -355,23 +793,23 @@ class _ColorChip extends StatelessWidget {
   }
 }
 
-Future<void> _showEditHabitDialog(
+Future<void> _showEditHabitForm(
   BuildContext context,
   WidgetRef ref,
-  Habit habit,
-) {
-  return showDialog<void>(
-    context: context,
-    builder: (context) => _HabitFormDialog(
-      title: 'Edit habit',
-      initialName: habit.name,
-      initialColor: habit.color,
-      onSave: (name, color) {
-        return ref
-            .read(habitsControllerProvider.notifier)
-            .updateSelectedHabit(name: name, color: color);
-      },
-    ),
+  Habit habit, {
+  required bool compact,
+}) {
+  return _showHabitForm(
+    context,
+    compact: compact,
+    title: 'Edit habit',
+    initialName: habit.name,
+    initialColor: habit.color,
+    onSave: (name, color) {
+      return ref
+          .read(habitsControllerProvider.notifier)
+          .updateSelectedHabit(name: name, color: color);
+    },
   );
 }
 
@@ -409,40 +847,111 @@ Future<void> _showDeleteHabitDialog(
   );
 }
 
-Future<void> _showCreateHabitDialog(BuildContext context, WidgetRef ref) {
-  return showDialog<void>(
-    context: context,
-    builder: (context) => _HabitFormDialog(
-      title: 'New habit',
-      initialName: '',
-      initialColor: const Color(0xFFE3B567),
-      onSave: (name, color) {
-        return ref
-            .read(habitsControllerProvider.notifier)
-            .addHabit(name: name, color: color);
-      },
-    ),
+Future<void> _showCreateHabitForm(
+  BuildContext context,
+  WidgetRef ref, {
+  required bool compact,
+}) {
+  return _showHabitForm(
+    context,
+    compact: compact,
+    title: 'New habit',
+    initialName: '',
+    initialColor: PlotTheme.gold,
+    onSave: (name, color) {
+      return ref
+          .read(habitsControllerProvider.notifier)
+          .addHabit(name: name, color: color);
+    },
   );
 }
 
-class _HabitFormDialog extends StatefulWidget {
-  const _HabitFormDialog({
+Future<void> _showHabitForm(
+  BuildContext context, {
+  required bool compact,
+  required String title,
+  required String initialName,
+  required Color initialColor,
+  required Future<void> Function(String name, Color color) onSave,
+}) {
+  if (!compact) {
+    return showDialog<void>(
+      context: context,
+      builder: (context) => Dialog(
+        key: const Key('habit-form-dialog'),
+        backgroundColor: PlotTheme.surfaceRaised,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: PlotTheme.border),
+        ),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 470),
+          child: _HabitForm(
+            title: title,
+            initialName: initialName,
+            initialColor: initialColor,
+            onSave: onSave,
+          ),
+        ),
+      ),
+    );
+  }
+
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) {
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: Container(
+          key: const Key('habit-form-sheet'),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * 0.9,
+          ),
+          decoration: const BoxDecoration(
+            color: PlotTheme.surfaceRaised,
+            border: Border(
+              top: BorderSide(color: PlotTheme.border),
+            ),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: _HabitForm(
+            title: title,
+            initialName: initialName,
+            initialColor: initialColor,
+            onSave: onSave,
+            compact: true,
+          ),
+        ),
+      );
+    },
+  );
+}
+
+class _HabitForm extends StatefulWidget {
+  const _HabitForm({
     required this.title,
     required this.initialName,
     required this.initialColor,
     required this.onSave,
+    this.compact = false,
   });
 
   final String title;
   final String initialName;
   final Color initialColor;
   final Future<void> Function(String name, Color color) onSave;
+  final bool compact;
 
   @override
-  State<_HabitFormDialog> createState() => _HabitFormDialogState();
+  State<_HabitForm> createState() => _HabitFormState();
 }
 
-class _HabitFormDialogState extends State<_HabitFormDialog> {
+class _HabitFormState extends State<_HabitForm> {
   static const colors = [
     Color(0xFFE3B567),
     Color(0xFFD88360),
@@ -453,7 +962,10 @@ class _HabitFormDialogState extends State<_HabitFormDialog> {
   ];
 
   late final TextEditingController _nameController;
+  final _formKey = GlobalKey<FormState>();
   late Color _selectedColor;
+  bool _saving = false;
+  String? _saveError;
 
   @override
   void initState() {
@@ -470,97 +982,156 @@ class _HabitFormDialogState extends State<_HabitFormDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: PlotTheme.surfaceRaised,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: PlotTheme.border),
-      ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 470),
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.title,
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 26),
-              TextField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'NAME'),
-              ),
-              const SizedBox(height: 26),
-              Text(
-                'COLOR',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: PlotTheme.muted,
-                  fontFamily: 'monospace',
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(widget.compact ? 24 : 32),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (widget.compact) ...[
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: PlotTheme.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  for (final color in colors)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 12),
+              const SizedBox(height: 22),
+            ],
+            Text(
+              widget.title,
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 26),
+            TextFormField(
+              key: const Key('habit-name-field'),
+              controller: _nameController,
+              autofocus: widget.compact,
+              enabled: !_saving,
+              maxLength: 40,
+              textInputAction: TextInputAction.done,
+              decoration: const InputDecoration(labelText: 'NAME'),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Name is required';
+                }
+                return null;
+              },
+              onFieldSubmitted: (_) => _submit(),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'COLOR',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: PlotTheme.muted,
+                fontFamily: PlotTheme.monoFont,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                for (var index = 0; index < colors.length; index++)
+                  Semantics(
+                    button: true,
+                    selected: colors[index] == _selectedColor,
+                    label: 'Color option ${index + 1}',
+                    child: Material(
+                      color: Colors.transparent,
                       child: InkWell(
-                        onTap: () => setState(() => _selectedColor = color),
-                        borderRadius: BorderRadius.circular(10),
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: color,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: color == _selectedColor
-                                  ? Colors.white
-                                  : Colors.transparent,
-                              width: 3,
+                        onTap: _saving
+                            ? null
+                            : () {
+                                setState(() => _selectedColor = colors[index]);
+                              },
+                        borderRadius: BorderRadius.circular(12),
+                        child: SizedBox.square(
+                          dimension: 48,
+                          child: Center(
+                            child: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: colors[index],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: colors[index] == _selectedColor
+                                      ? Colors.white
+                                      : Colors.transparent,
+                                  width: 3,
+                                ),
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                ],
-              ),
-              const SizedBox(height: 30),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Cancel'),
                   ),
-                  const SizedBox(width: 12),
-                  FilledButton(
-                    onPressed: () async {
-                      final name = _nameController.text.trim();
-
-                      if (name.isEmpty) {
-                        return;
-                      }
-
-                      await widget.onSave(name, _selectedColor);
-
-                      if (!context.mounted) {
-                        return;
-                      }
-
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text('Save'),
-                  ),
-                ],
+              ],
+            ),
+            if (_saveError != null) ...[
+              const SizedBox(height: 18),
+              Text(
+                _saveError!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ],
-          ),
+            const SizedBox(height: 30),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                OutlinedButton(
+                  onPressed: _saving ? null : () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                const SizedBox(width: 12),
+                FilledButton(
+                  key: const Key('habit-form-save'),
+                  onPressed: _saving ? null : _submit,
+                  child: _saving
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Save'),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  Future<void> _submit() async {
+    if (_saving || !(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
+    setState(() {
+      _saving = true;
+      _saveError = null;
+    });
+
+    try {
+      await widget.onSave(_nameController.text.trim(), _selectedColor);
+
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } on Object {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _saveError = 'Could not save the habit. Try again.';
+        });
+      }
+    }
   }
 }

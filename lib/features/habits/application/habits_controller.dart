@@ -25,6 +25,8 @@ class HabitsState {
 }
 
 class HabitsController extends AsyncNotifier<HabitsState> {
+  Future<void> _toggleQueue = Future<void>.value();
+
   @override
   Future<HabitsState> build() async {
     final repository = ref.watch(habitsRepositoryProvider);
@@ -125,25 +127,47 @@ class HabitsController extends AsyncNotifier<HabitsState> {
     );
   }
 
-  Future<void> togglePlantedDay(DateTime day) async {
+  Future<void> togglePlantedDay(DateTime day, {DateTime? today}) {
     final current = state.requireValue;
     final selectedHabitId = current.selectedHabitId;
 
     if (selectedHabitId == null) {
+      return Future<void>.value();
+    }
+
+    final date = Habit.civilDate(day);
+    final currentDay = Habit.civilDate(today ?? DateTime.now());
+
+    if (date.isAfter(currentDay)) {
+      return Future<void>.error(
+        ArgumentError.value(day, 'day', 'Cannot toggle a future date'),
+      );
+    }
+
+    final operation = _toggleQueue.then(
+      (_) => _togglePlantedDay(selectedHabitId, date),
+    );
+    _toggleQueue = operation.catchError((Object _) {});
+    return operation;
+  }
+
+  Future<void> _togglePlantedDay(String habitId, DateTime date) async {
+    final current = state.requireValue;
+
+    if (!current.habits.any((habit) => habit.id == habitId)) {
       return;
     }
 
     final repository = ref.read(habitsRepositoryProvider);
-    final date = DateUtils.dateOnly(day);
 
     await repository.toggleHabitEntry(
-      habitId: selectedHabitId,
+      habitId: habitId,
       day: date,
     );
 
     final habits = [
       for (final habit in current.habits)
-        if (habit.id == current.selectedHabitId)
+        if (habit.id == habitId)
           habit.copyWith(
             plantedDays: habit.plantedDays.contains(date)
                 ? ({...habit.plantedDays}..remove(date))
@@ -154,7 +178,10 @@ class HabitsController extends AsyncNotifier<HabitsState> {
     ];
 
     state = AsyncData(
-      HabitsState(habits: habits, selectedHabitId: selectedHabitId),
+      HabitsState(
+        habits: habits,
+        selectedHabitId: current.selectedHabitId,
+      ),
     );
   }
 
@@ -194,20 +221,20 @@ class HabitsController extends AsyncNotifier<HabitsState> {
   }
 
   List<Habit> _starterHabits() {
-    final today = DateUtils.dateOnly(DateTime.now());
+    final today = Habit.civilDate(DateTime.now());
 
     return [
       Habit(
         id: 'read',
         name: 'Read',
         color: const Color(0xFFE3B567),
-        plantedDays: {today.subtract(const Duration(days: 1)), today},
+        plantedDays: {Habit.addCivilDays(today, -1), today},
       ),
       Habit(
         id: 'stretch',
         name: 'Stretch',
         color: const Color(0xFF69AC9A),
-        plantedDays: {today.subtract(const Duration(days: 4))},
+        plantedDays: {Habit.addCivilDays(today, -4)},
       ),
     ];
   }

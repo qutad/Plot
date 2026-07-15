@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class PlotTheme {
+  static const serifFont = 'Lora';
+  static const monoFont = 'JetBrains Mono';
   static const ink = Color(0xFF0A100C);
   static const surface = Color(0xFF111A14);
   static const surfaceRaised = Color(0xFF162019);
@@ -8,6 +11,16 @@ class PlotTheme {
   static const text = Color(0xFFEAECE7);
   static const muted = Color(0xFF8E9890);
   static const gold = Color(0xFFE3B567);
+  static const systemUiOverlayStyle = SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarBrightness: Brightness.dark,
+    statusBarIconBrightness: Brightness.light,
+    systemNavigationBarColor: ink,
+    systemNavigationBarDividerColor: ink,
+    systemNavigationBarIconBrightness: Brightness.light,
+    systemStatusBarContrastEnforced: false,
+    systemNavigationBarContrastEnforced: false,
+  );
 
   static ThemeData get dark {
     final scheme = ColorScheme.fromSeed(
@@ -26,7 +39,7 @@ class PlotTheme {
         outline: border,
       ),
       scaffoldBackgroundColor: ink,
-      fontFamily: 'Georgia',
+      fontFamily: serifFont,
       textTheme: const TextTheme(
         displaySmall: TextStyle(
           color: text,

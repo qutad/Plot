@@ -13,6 +13,20 @@ class Habit {
   final Color color;
   final Set<DateTime> plantedDays;
 
+  static const int daysInLast52Weeks = 52 * DateTime.daysPerWeek;
+
+  static DateTime civilDate(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
+  }
+
+  static DateTime addCivilDays(DateTime date, int days) {
+    return DateTime(date.year, date.month, date.day + days);
+  }
+
+  static DateTime startOfLast52Weeks(DateTime today) {
+    return addCivilDays(civilDate(today), -(daysInLast52Weeks - 1));
+  }
+
   Habit copyWith({String? name, Color? color, Set<DateTime>? plantedDays}) {
     return Habit(
       id: id,
@@ -24,17 +38,17 @@ class Habit {
 
   int get currentStreak {
     final normalizedDays = _normalizedPlantedDays;
-    final today = DateUtils.dateOnly(DateTime.now());
+    final today = civilDate(DateTime.now());
     final startDay = normalizedDays.contains(today)
         ? today
-        : today.subtract(const Duration(days: 1));
+        : addCivilDays(today, -1);
 
     var streak = 0;
     var cursor = startDay;
 
     while (normalizedDays.contains(cursor)) {
       streak++;
-      cursor = cursor.subtract(const Duration(days: 1));
+      cursor = addCivilDays(cursor, -1);
     }
 
     return streak;
@@ -53,7 +67,7 @@ class Habit {
     for (var index = 1; index < sortedDays.length; index++) {
       final previous = sortedDays[index - 1];
       final currentDay = sortedDays[index];
-      final expectedNext = previous.add(const Duration(days: 1));
+      final expectedNext = addCivilDays(previous, 1);
 
       if (currentDay == expectedNext) {
         current++;
@@ -70,17 +84,21 @@ class Habit {
   }
 
   int get daysPlantedLast52Weeks {
-    final today = DateUtils.dateOnly(DateTime.now());
-    final start = today.subtract(const Duration(days: 364));
+    return daysPlantedInLast52Weeks();
+  }
+
+  int daysPlantedInLast52Weeks({DateTime? today}) {
+    final end = civilDate(today ?? DateTime.now());
+    final start = startOfLast52Weeks(end);
 
     return _normalizedPlantedDays.where((day) {
-      return !day.isBefore(start) && !day.isAfter(today);
+      return !day.isBefore(start) && !day.isAfter(end);
     }).length;
   }
 
   Set<DateTime> get _normalizedPlantedDays {
     return {
-      for (final day in plantedDays) DateUtils.dateOnly(day),
+      for (final day in plantedDays) civilDate(day),
     };
   }
 }

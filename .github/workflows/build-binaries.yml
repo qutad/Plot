@@ -149,10 +149,77 @@ jobs:
           name: Plot-Linux-AppImage
           path: Plot-linux-x86_64.AppImage
 
+  android:
+    name: Android
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - run: flutter pub get
+
+      - run: dart run build_runner build
+
+      - name: Build Android APK
+        run: flutter build apk --release
+
+      - name: Build Android App Bundle
+        run: flutter build appbundle --release
+
+      - name: Package Android binaries
+        run: |
+          cp build/app/outputs/flutter-apk/app-release.apk Plot-Android.apk
+          cp build/app/outputs/bundle/release/app-release.aab Plot-Android.aab
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Plot-Android
+          path: |
+            Plot-Android.apk
+            Plot-Android.aab
+
+  ios:
+    name: iOS
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - run: flutter pub get
+
+      - run: dart run build_runner build
+
+      - name: Build unsigned iOS app
+        run: flutter build ios --release --no-codesign
+
+      - name: Package unsigned iOS IPA
+        run: |
+          mkdir Payload
+          cp -R build/ios/iphoneos/Runner.app Payload/
+          zip -r Plot-iOS-unsigned.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Plot-iOS
+          path: Plot-iOS-unsigned.ipa
+
   release:
     name: GitHub Release
     runs-on: ubuntu-latest
-    needs: [macos, windows, linux]
+    needs:
+      - macos
+      - windows
+      - linux
+      - android
+      - ios
     if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
 
     steps:
@@ -172,4 +239,7 @@ jobs:
             dist/Plot-macOS.zip
             dist/Plot-Windows.zip
             dist/Plot-linux-x86_64.AppImage
+            dist/Plot-Android.apk
+            dist/Plot-Android.aab
+            dist/Plot-iOS-unsigned.ipa
           generate_release_notes: true

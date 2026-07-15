@@ -30,16 +30,15 @@ class DashboardScreen extends ConsumerWidget {
                       ? Center(
                           child: Text(
                             'No habits',
-                            style: Theme.of(
-                              context
-                            ).textTheme.headlineMedium?.copyWith(
-                              color: PlotTheme.muted,
-                              fontFamily: 'monospace',
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              fontStyle: FontStyle.italic,
-                              letterSpacing: 1.2,
-                            ),
+                            style: Theme.of(context).textTheme.headlineMedium
+                                ?.copyWith(
+                                  color: PlotTheme.muted,
+                                  fontFamily: 'monospace',
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  fontStyle: FontStyle.italic,
+                                  letterSpacing: 1.2,
+                                ),
                           ),
                         )
                       : _HabitDetail(habit: selectedHabit),

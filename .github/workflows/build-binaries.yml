@@ -167,7 +167,7 @@ jobs:
       - name: Configure Android signing
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEYSTORE_ALIAS }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
         run: |

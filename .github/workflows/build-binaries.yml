@@ -164,10 +164,33 @@ jobs:
 
       - run: dart run build_runner build
 
-      - name: Build Android APK
+      - name: Configure Android signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "ANDROID_KEYSTORE_BASE64 is not configured"
+            exit 1
+          fi
+
+          printf '%s' "$KEYSTORE_BASE64" \
+            | base64 --decode \
+            > android/app/upload-keystore.jks
+
+          printf '%s\n' \
+            "storePassword=$STORE_PASSWORD" \
+            "keyPassword=$KEY_PASSWORD" \
+            "keyAlias=$KEY_ALIAS" \
+            "storeFile=$GITHUB_WORKSPACE/android/app/upload-keystore.jks" \
+            > android/key.properties
+
+      - name: Build signed Android APK
         run: flutter build apk --release
 
-      - name: Build Android App Bundle
+      - name: Build signed Android App Bundle
         run: flutter build appbundle --release
 
       - name: Package Android binaries

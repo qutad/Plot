@@ -27,7 +27,21 @@ class DashboardScreen extends ConsumerWidget {
                 _HabitSidebar(state: state),
                 Expanded(
                   child: selectedHabit == null
-                      ? const SizedBox.shrink()
+                      ? Center(
+                          child: Text(
+                            'No habits',
+                            style: Theme.of(
+                              context
+                            ).textTheme.headlineMedium?.copyWith(
+                              color: PlotTheme.muted,
+                              fontFamily: 'monospace',
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              fontStyle: FontStyle.italic,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        )
                       : _HabitDetail(habit: selectedHabit),
                 ),
               ],
